@@ -26,81 +26,76 @@
 
 static int proc_fd = -1;
 
-int init_machdep(pid_t process)
-{
-     char filename[64];
-     sprintf(filename, "/proc/%d/stat", (int)process);
-     proc_fd = open(filename, O_RDONLY);
+int init_machdep(pid_t process) {
+  char filename[64];
+  sprintf(filename, "/proc/%d/stat", (int)process);
+  proc_fd = open(filename, O_RDONLY);
 
-     return (proc_fd != -1);
+  return (proc_fd != -1);
 }
 
 /* Read /proc/<pid>/stat, see: `/proc/[pid]/stat` in `man proc`. */
-int get_sample(struct memtime_info *info)
-{
-     static char buffer[2048];
-     char *tmp;
-     int i, utime, stime;
-     long int vsize, rss;
-     int rc;
+int get_sample(struct memtime_info *info) {
+  static char buffer[2048];
+  char *tmp;
+  int i, utime, stime;
+  long int vsize, rss;
+  int rc;
 
-     lseek(proc_fd, 0, SEEK_SET);
+  lseek(proc_fd, 0, SEEK_SET);
 
-     rc = read(proc_fd, buffer, 2048);
+  rc = read(proc_fd, buffer, 2048);
 
-     if (rc == -1)
-          return 0;
+  if (rc == -1)
+    return 0;
 
-     *(buffer + rc) = '\0';
+  *(buffer + rc) = '\0';
 
-     for (i=0, tmp=buffer; i < 13; i++)
-          tmp = strchr(tmp + 1, ' ');
+  for (i = 0, tmp = buffer; i < 13; i++)
+    tmp = strchr(tmp + 1, ' ');
 
-     sscanf(tmp + 1, "%d %d", &utime, &stime);
+  sscanf(tmp + 1, "%d %d", &utime, &stime);
 
-     for (/* empty */; i < 22; i++)
-          tmp = strchr(tmp + 1, ' ');
+  for (/* empty */; i < 22; i++)
+    tmp = strchr(tmp + 1, ' ');
 
-     sscanf(tmp + 1, "%ld %ld", &vsize, &rss);
+  sscanf(tmp + 1, "%ld %ld", &vsize, &rss);
 
-     info->utime_ms = utime * (1000 / HZ);
-     info->stime_ms = stime * (1000 / HZ);
+  info->utime_ms = utime * (1000 / HZ);
+  info->stime_ms = stime * (1000 / HZ);
 
-     info->vsize_kb = vsize / 1024;
+  info->vsize_kb = vsize / 1024;
 
-     info->rss_kb = (rss * getpagesize()) / 1024;
+  info->rss_kb = (rss * getpagesize()) / 1024;
 
-     return 1;
+  return 1;
 }
 
-unsigned int get_time()
-{
-     struct timeval now;
-     struct timezone dummy;
-     int rc;
+unsigned int get_time() {
+  struct timeval now;
+  struct timezone dummy;
+  int rc;
 
-     rc = gettimeofday(&now, &dummy);
+  rc = gettimeofday(&now, &dummy);
 
-     if (rc == -1) {
-          return 0;
-     }
+  if (rc == -1) {
+    return 0;
+  }
 
-     return (now.tv_sec * 1000) + (now.tv_usec / 1000);
+  return (now.tv_sec * 1000) + (now.tv_usec / 1000);
 }
 
-int set_mem_limit(long int maxbytes)
-{
-     struct rlimit rl;
-     long int softlimit = (long int)maxbytes*0.95;
-     rl.rlim_cur = softlimit;
-     rl.rlim_max = maxbytes;
-     return setrlimit(RLIMIT_AS, &rl);
+int set_mem_limit(long int maxbytes) {
+  struct rlimit rl;
+  long int softlimit = (long int)maxbytes * 0.95;
+  rl.rlim_cur = softlimit;
+  rl.rlim_max = maxbytes;
+  return setrlimit(RLIMIT_AS, &rl);
 }
 
-int set_cpu_limit(long int maxseconds)
-{
-     struct rlimit rl;
-     rl.rlim_cur=maxseconds;
-     rl.rlim_max=maxseconds;
-     return setrlimit(RLIMIT_CPU,&rl);
+int set_cpu_limit(long int maxseconds) {
+  struct rlimit rl;
+  rl.rlim_cur = maxseconds;
+  rl.rlim_max = maxseconds;
+  return setrlimit(RLIMIT_CPU, &rl);
 }
