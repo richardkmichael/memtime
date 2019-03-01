@@ -161,7 +161,7 @@ int main (int argc, char *argv[] )
 		    end = get_time();
 		    
 		    printf("%.2f user, %.2f system, %.2f elapsed"
-			    " -- VSize = %dKB, RSS = %dKB\n",
+			    " -- VSize = %ldKB, RSS = %ldKB\n",
 			    (double)info.utime_ms/1000.0,
 			    (double)info.stime_ms/1000.0,
 			    (double)(end - start)/1000.0,
@@ -202,7 +202,7 @@ int main (int argc, char *argv[] )
 			      + (double)kid_usage.ru_stime.tv_usec / 1E6);
 
 	  printf("%.2f user, %.2f system, %.2f elapsed -- "
-		  "Max VSize = %dKB, Max RSS = %dKB\n", 
+		  "Max VSize = %ldKB, Max RSS = %ldKB\n", 
 		  kid_utime, kid_stime, (double)(end - start) / 1000.0,
 		  max_vsize, max_rss);
      }
