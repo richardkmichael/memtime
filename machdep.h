@@ -36,7 +36,6 @@
 
 #include <sys/resource.h>
 
- 
 struct memtime_info {
      unsigned int utime_ms;
      unsigned int stime_ms;
