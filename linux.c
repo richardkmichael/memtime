@@ -35,6 +35,7 @@ int init_machdep(pid_t process)
      return (proc_fd != -1);
 }
 
+/* Read /proc/<pid>/stat, see: `/proc/[pid]/stat` in `man proc`. */
 int get_sample(struct memtime_info *info)
 {
      static char buffer[2048];
