@@ -2,7 +2,7 @@
  *---------------------------------------------------------------------------*
  *
  * Copyright (c) 2000, Johan Bengtsson
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -25,11 +25,11 @@
 #ifndef MACHDEP_H
 #define MACHDEP_H
 
-#include <sys/time.h>
 #include <asm/param.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -37,10 +37,10 @@
 #include <sys/resource.h>
 
 struct memtime_info {
-     unsigned int utime_ms;
-     unsigned int stime_ms;
-     long int rss_kb;
-     long int vsize_kb;
+  unsigned int utime_ms;
+  unsigned int stime_ms;
+  long int rss_kb;
+  long int vsize_kb;
 };
 
 int init_machdep(pid_t process);
