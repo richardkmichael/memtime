@@ -2,7 +2,7 @@
  *---------------------------------------------------------------------------*
  *
  * Copyright (c) 2000, Johan Bengtsson
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -26,7 +26,6 @@
 
 static int proc_fd = -1;
 
-
 int init_machdep(pid_t process)
 {
      char filename[64];
@@ -49,17 +48,17 @@ int get_sample(struct memtime_info *info)
      rc = read(proc_fd, buffer, 2048);
 
      if (rc == -1)
-	  return 0;
+          return 0;
 
      *(buffer + rc) = '\0';
 
      for (i=0, tmp=buffer; i < 13; i++)
-	  tmp = strchr(tmp + 1, ' ');
+          tmp = strchr(tmp + 1, ' ');
 
      sscanf(tmp + 1, "%d %d", &utime, &stime);
-    
+
      for (/* empty */; i < 22; i++)
-	  tmp = strchr(tmp + 1, ' ');
+          tmp = strchr(tmp + 1, ' ');
 
      sscanf(tmp + 1, "%ld %ld", &vsize, &rss);
 
@@ -67,8 +66,9 @@ int get_sample(struct memtime_info *info)
      info->stime_ms = stime * (1000 / HZ);
 
      info->vsize_kb = vsize / 1024;
+
      info->rss_kb = (rss * getpagesize()) / 1024;
-     
+
      return 1;
 }
 
@@ -79,9 +79,9 @@ unsigned int get_time()
      int rc;
 
      rc = gettimeofday(&now, &dummy);
-    
+
      if (rc == -1) {
-	  return 0;
+          return 0;
      }
 
      return (now.tv_sec * 1000) + (now.tv_usec / 1000);
@@ -89,17 +89,17 @@ unsigned int get_time()
 
 int set_mem_limit(long int maxbytes)
 {
-	struct  rlimit rl;
-	long int softlimit = (long int)maxbytes*0.95;
-	rl.rlim_cur = softlimit; 
-	rl.rlim_max = maxbytes;
-	return setrlimit(RLIMIT_AS, &rl);
+     struct rlimit rl;
+     long int softlimit = (long int)maxbytes*0.95;
+     rl.rlim_cur = softlimit;
+     rl.rlim_max = maxbytes;
+     return setrlimit(RLIMIT_AS, &rl);
 }
 
 int set_cpu_limit(long int maxseconds)
 {
-	struct  rlimit rl;
-	rl.rlim_cur=maxseconds; 
-	rl.rlim_max=maxseconds;
-	return setrlimit(RLIMIT_CPU,&rl);
+     struct rlimit rl;
+     rl.rlim_cur=maxseconds;
+     rl.rlim_max=maxseconds;
+     return setrlimit(RLIMIT_CPU,&rl);
 }
