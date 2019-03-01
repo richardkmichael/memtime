@@ -67,7 +67,6 @@ int get_sample(struct memtime_info *info)
      info->stime_ms = stime * (1000 / HZ);
 
      info->vsize_kb = vsize / 1024;
-     //printf("%ld\n", vsize);
      info->rss_kb = (rss * getpagesize()) / 1024;
      
      return 1;
