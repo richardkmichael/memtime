@@ -2,7 +2,7 @@
  *---------------------------------------------------------------------------*
  *
  * Copyright (c) 2000, Johan Bengtsson
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -50,163 +50,158 @@ int main (int argc, char *argv[] )
      int    kid_status;
      int    i, opt, echo_args = 0, exit_flag;
      long int sample_time=0, time = 0;
-	 
-	 int maxkbytes=0; //kilobytes
-	 int maxseconds=0; //seconds
-	 long int maxmillis=0;
+
+     int maxkbytes=0; //kilobytes
+     int maxseconds=0; //seconds
+     long int maxmillis=0;
 
      long int max_vsize = 0, max_rss = 0;
      unsigned int start, end;
 
      struct memtime_info info;
-//     struct rlimit currentl;
+     // struct rlimit currentl;
 
      if (argc < 2) {
-	  char *tmp = strrchr(argv[0], '/');       
-	  tmp = (tmp ? tmp + 1 : argv[0]);
+          char *tmp = strrchr(argv[0], '/');
+          tmp = (tmp ? tmp + 1 : argv[0]);
 
-	  fprintf(stderr, 
-		  "%s: usage %s [-t <interval>] [-e] [-m <maxkilobytes>] [-c <maxcpuseconds>] <cmd> [<params>]\n",
-		  tmp,tmp);
-	  exit(EXIT_FAILURE);
+          fprintf(stderr,
+               "%s: usage %s [-t <interval>] [-e] [-m <maxkilobytes>] [-c <maxcpuseconds>] <cmd> [<params>]\n",
+               tmp,tmp);
+          exit(EXIT_FAILURE);
      }
 
      while ((opt = getopt(argc, argv, "+et:m:c:")) != -1) {
+          switch (opt) {
+          case 'e' :
+               echo_args = 1;
+               break;
 
-	  switch (opt) {
-	  case 'e' : 
-	       echo_args = 1;
-	       break;
+          case 't' :
+               errno = 0;
+               sample_time = strtol(optarg, NULL, 0);
+               if (errno) {
+                 perror("Illegal argument to t option");
+                 exit(EXIT_FAILURE);
+               }
+               break;
 
-	  case 't' :
-	       errno = 0;
-	       sample_time = strtol(optarg, NULL, 0);
-	       if (errno) {
-		    perror("Illegal argument to t option");
-		    exit(EXIT_FAILURE);
-	       }
-	       break;
-	  case 'm' : 
-	       errno = 0;
-	       maxkbytes = atoi(optarg);
-	       if (errno) {
-		    perror("Illegal argument to m option");
-		    exit(EXIT_FAILURE);
-	       }
-	       break;
+          case 'm' :
+               errno = 0;
+               maxkbytes = atoi(optarg);
+               if (errno) {
+                 perror("Illegal argument to m option");
+                 exit(EXIT_FAILURE);
+               }
+               break;
 
-	  case 'c' : 
-	       errno = 0;
-	       maxseconds = atoi(optarg);
-	       if (errno) {
-		    perror("Illegal argument to c option");
-		    exit(EXIT_FAILURE);
-	       }
-		   maxmillis=1000*maxseconds;
-	       break;
-
-	  }
+          case 'c' :
+               errno = 0;
+               maxseconds = atoi(optarg);
+               if (errno) {
+                    perror("Illegal argument to c option");
+                    exit(EXIT_FAILURE);
+               }
+               maxmillis=1000*maxseconds;
+               break;
+          }
      }
 
      if (echo_args) {
-	  fprintf(stderr,"Command line: ");
-	  for (i = optind; i < argc; i++)
-	       fprintf(stderr,"%s ", argv[i]);
-	  fprintf(stderr,"\n");
+          fprintf(stderr,"Command line: ");
+          for (i = optind; i < argc; i++)
+               fprintf(stderr,"%s ", argv[i]);
+          fprintf(stderr,"\n");
      }
 
      start = get_time();
-    
+
      switch (kid = fork()) {
-	
      case -1 :
-	  perror("fork failed");
-	  exit(EXIT_FAILURE);
-	
-     case 0 :	
+          perror("fork failed");
+          exit(EXIT_FAILURE);
 
-	  if (maxkbytes>0) {
-	       if(set_mem_limit((long int)maxkbytes*1024)) {
-		printf("error\n");;
-		}
-	  }
-  
-	  if (maxseconds>0) {
-	       set_cpu_limit((long int)maxseconds);
-	  }
+     case 0 :
+          if (maxkbytes>0) {
+               if(set_mem_limit((long int)maxkbytes*1024)) {
+             printf("error\n");;
+             }
+          }
 
-	  execvp(argv[optind], &(argv[optind]));
-	  perror("exec failed");
-	  exit(EXIT_FAILURE);
-	
+          if (maxseconds>0) {
+               set_cpu_limit((long int)maxseconds);
+          }
+
+          execvp(argv[optind], &(argv[optind]));
+          perror("exec failed");
+          exit(EXIT_FAILURE);
+
      default :
-	  break;
+          break;
      }
 
      if (!init_machdep(kid)) {
-	  fprintf(stderr, "%s: Failed to initialise sampling.\n", argv[0]);
-	  exit(EXIT_FAILURE);
+          fprintf(stderr, "%s: Failed to initialise sampling.\n", argv[0]);
+          exit(EXIT_FAILURE);
      }
 
      do {
+          get_sample(&info);
 
-	  get_sample(&info);
+          max_vsize = (info.vsize_kb > max_vsize ? info.vsize_kb : max_vsize);
+          max_rss = (info.rss_kb > max_rss ? info.rss_kb : max_rss);
 
-	  max_vsize = (info.vsize_kb > max_vsize ? info.vsize_kb : max_vsize);
-	  max_rss = (info.rss_kb > max_rss ? info.rss_kb : max_rss);
-	  
-	  if (sample_time) {
-	       time++;
-	       if (time == 10 * sample_time) {
-		    end = get_time();
-		    
-		    printf("%.2f user, %.2f system, %.2f elapsed"
-			    " -- VSize = %ldKB, RSS = %ldKB\n",
-			    (double)info.utime_ms/1000.0,
-			    (double)info.stime_ms/1000.0,
-			    (double)(end - start)/1000.0,
-			    info.vsize_kb, info.rss_kb);
-		    fflush(stdout);
-		    
-		    time = 1;
-	       }
-	  }
+          if (sample_time) {
+               time++;
+               if (time == 10 * sample_time) {
+                 end = get_time();
 
-	  usleep(100000);
+                 printf("%.2f user, %.2f system, %.2f elapsed"
+                      " -- VSize = %ldKB, RSS = %ldKB\n",
+                      (double)info.utime_ms/1000.0,
+                      (double)info.stime_ms/1000.0,
+                      (double)(end - start)/1000.0,
+                      info.vsize_kb, info.rss_kb);
+                 fflush(stdout);
 
-	  exit_flag = ((wait4(kid, &kid_status, WNOHANG, &kid_usage) == kid)
-		       && (WIFEXITED(kid_status) || WIFSIGNALED(kid_status)));
-	  
-	  if ((maxkbytes>0) && (max_vsize>maxkbytes)) {
-	  	kill(kid,SIGKILL);
-	  }
-	  
-	  if ((maxmillis>0) && (info.utime_ms>maxmillis)) {
-	  	kill(kid,SIGKILL);
-	  }
- 
+                 time = 1;
+               }
+          }
+
+          usleep(100000);
+
+          exit_flag = ((wait4(kid, &kid_status, WNOHANG, &kid_usage) == kid)
+                    && (WIFEXITED(kid_status) || WIFSIGNALED(kid_status)));
+
+          if ((maxkbytes>0) && (max_vsize>maxkbytes)) {
+               kill(kid,SIGKILL);
+          }
+
+          if ((maxmillis>0) && (info.utime_ms>maxmillis)) {
+               kill(kid,SIGKILL);
+          }
+
      } while (!exit_flag);
-     
+
      end = get_time();
-     
+
      if (WIFEXITED(kid_status)) {
-	  fprintf(stderr, "Exit [%d]\n", WEXITSTATUS(kid_status));
+          fprintf(stderr, "Exit [%d]\n", WEXITSTATUS(kid_status));
      } else {
-	  fprintf(stderr, "Killed [%d]\n", WTERMSIG(kid_status));
+          fprintf(stderr, "Killed [%d]\n", WTERMSIG(kid_status));
      }
 
      {
-	  double kid_utime = ((double)kid_usage.ru_utime.tv_sec 
-			      + (double)kid_usage.ru_utime.tv_usec / 1E6);
-	  double kid_stime = ((double)kid_usage.ru_stime.tv_sec 
-			      + (double)kid_usage.ru_stime.tv_usec / 1E6);
+          double kid_utime = ((double)kid_usage.ru_utime.tv_sec
+                        + (double)kid_usage.ru_utime.tv_usec / 1E6);
+          double kid_stime = ((double)kid_usage.ru_stime.tv_sec
+                        + (double)kid_usage.ru_stime.tv_usec / 1E6);
 
-	  printf("%.2f user, %.2f system, %.2f elapsed -- "
-		  "Max VSize = %ldKB, Max RSS = %ldKB\n", 
-		  kid_utime, kid_stime, (double)(end - start) / 1000.0,
-		  max_vsize, max_rss);
+          printf("%.2f user, %.2f system, %.2f elapsed -- "
+               "Max VSize = %ldKB, Max RSS = %ldKB\n",
+               kid_utime, kid_stime, (double)(end - start) / 1000.0,
+               max_vsize, max_rss);
      }
 
      exit(EXIT_SUCCESS);
 }
-
