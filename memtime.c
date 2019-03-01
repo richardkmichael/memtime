@@ -197,9 +197,10 @@ int main(int argc, char *argv[]) {
                         (double)kid_usage.ru_stime.tv_usec / 1E6);
 
     printf("%.2f user, %.2f system, %.2f elapsed -- "
-           "Max VSize = %ldKB, Max RSS = %ldKB\n",
+           "Sampled Max VSize = %ldKB, Sampled Max RSS = %ldKB\n"
+           "Max RSS = %ldKB\n",
            kid_utime, kid_stime, (double)(end - start) / 1000.0, max_vsize,
-           max_rss);
+           max_rss, kid_usage.ru_maxrss);
   }
 
   exit(EXIT_SUCCESS);
